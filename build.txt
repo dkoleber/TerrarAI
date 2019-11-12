@@ -1,0 +1,3 @@
+displayName = PythonBridge
+author = KV
+version = 0.1
