@@ -15,6 +15,7 @@ namespace PythonBridge.Items
 		{
 			item.damage = 50;
 			item.melee = true;
+            item.axe = 50;
 			item.width = 40;
 			item.height = 40;
 			item.useTime = 20;
