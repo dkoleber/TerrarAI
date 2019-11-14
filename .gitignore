@@ -2,3 +2,4 @@
 bin/
 obj/
 Backup/
+python/__pycache__/
