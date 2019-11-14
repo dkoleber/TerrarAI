@@ -140,11 +140,6 @@ class ActionSpace:
     def verify_action_vector(self, vector:List[float]):
         if len(vector) != len(self.definition):
             return False
-        # for i in range(len(vector)):
-        #     if self.definition[i].name != vector[i].name:
-        #         return False
-        #     if self.definition[i].action_type == ActionType.PROBABILITY and (vector[i] < 0 or vector[i] > 1):
-        #         return False
         return True
 
 
@@ -260,57 +255,6 @@ def run():
 
 
 
-# def run():
-#     key_1 = 0x02
-#     key_2 = 0x03
-#
-#     key_a = 0x1E
-#
-#
-#     middle_x = int(1920 / 2)
-#     middle_y = int(1080 / 2)
-#
-#     time.sleep(5)
-#
-#     print('staring keys 1')
-#
-#     PressKey(key_1)
-#     time.sleep(.1)
-#     ReleaseKey(key_1)
-#     time.sleep(1)
-#
-#     PressKey(key_2)
-#     time.sleep(.1)
-#     ReleaseKey(key_2)
-#     time.sleep(1)
-#
-#     PressKey(key_a)
-#     time.sleep(3)
-#     ReleaseKey(key_a)
-#     time.sleep(1)
-#
-#     print('starting keys')
-#
-#     pg.press('1')
-#     time.sleep(1)
-#     pg.press('2')
-#     time.sleep(1)
-#     pg.press('3')
-#     time.sleep(3)
-#
-#     pg.keyDown('w')
-#     time.sleep(3)
-#     pg.keyUp('w')
-#     time.sleep(1)
-#
-#     print('starting mouse')
-#
-#     pg.moveTo(middle_x, middle_y, 1)
-#     time.sleep(1)
-#     pg.moveTo(middle_x, middle_y + 50, 1)
-#     pg.mouseDown()
-#     time.sleep(5)
-#     pg.mouseUp()
 
 if __name__=='__main__':
     run()
