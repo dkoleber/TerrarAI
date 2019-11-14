@@ -12,6 +12,7 @@ from IOAdapter import IOAdapter
 
 global_io_adapter = IOAdapter()
 
+
 class IOAction(ABC):
     def __init__(self, is_held):
         self.is_held = is_held
@@ -187,6 +188,7 @@ class ActionManager:
 
         return IOActions(actions)
 
+
 class HardCodedAction:
     def __init__(self, key, amount, delay, x=None, y=None):
         self.key = key
@@ -203,6 +205,7 @@ class BaseAgent(ABC):
     @abstractmethod
     def get_action(self, agent_input):
         pass
+
 
 class SequentialAgent(BaseAgent):
     def __init__(self, action_space: ActionSpace):
