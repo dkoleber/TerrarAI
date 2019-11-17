@@ -9,11 +9,6 @@ using System.Threading.Tasks;
 
 namespace PythonBridge
 {
-
-
-
-
-
     [ServiceContract]
     public interface IUpdateService
     {
@@ -27,7 +22,7 @@ namespace PythonBridge
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        bool SubscribeToNpcState(string npcName);
+        bool SubscribeToNpcState(string npcName, int nearestN);
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -35,7 +30,7 @@ namespace PythonBridge
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        bool SubscribeToPlayerAnchoredWorldSlice(int xOffset, int yOffset, int width, int height);
+        bool SubscribeToAnchoredWorldSlice(int xOffset, int yOffset, int width, int height);
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -59,10 +54,13 @@ namespace PythonBridge
 
 
 
+        [OperationContract]
+        [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        bool EnterWorld(string worldName, string playerName);
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        void LoadWorld(string worldName);
+        bool ExitWorld();
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -72,57 +70,83 @@ namespace PythonBridge
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
         void ConfigurePlayer(string playerConfiguration); //includes inventory, health, buffs, and location
 
+
+    }
+
+    public class NpcSubscription
+    {
+        public string npcName;
+        public int nearestN;
+        public NpcSubscription(string npcName, int nearestN)
+        {
+            this.npcName = npcName;
+            this.nearestN = nearestN;
+        }
     }
 
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class UpdateService : IUpdateService
     {
-        private Func<PlayerState> _playerStateGetter;
-        private Func<string, NpcState> _npcStateGetter;
-        private Func<WorldSliceSpecifier, WorldSlice> _unanchoredWorldSliceGetter;
-        private Func<WorldSliceSpecifier, WorldSlice> _anchoredWorldSliceGetter;
 
         private bool _playerStateSubscribed;
-        private List<string> _npcStateSubscriptions;
+        private List<NpcSubscription> _npcStateSubscriptions;
         private List<WorldSliceSpecifier> _unanchoredWorldSliceSubscriptions;
         private List<WorldSliceSpecifier> _anchoredWorldSliceSubscriptions;
+        private WorldInterface _worldInterface;
 
 
-
-        public UpdateService(Func<PlayerState> playerStateGetter,
-            Func<string, NpcState> npcStateGetter,
-            Func<WorldSliceSpecifier, WorldSlice> unanchoredWorldSliceGetter,
-            Func<WorldSliceSpecifier, WorldSlice> anchoredWorldSliceGetter)
+        public UpdateService()
         {
             _playerStateSubscribed = false;
-            _npcStateSubscriptions = new List<string>();
+            _npcStateSubscriptions = new List<NpcSubscription>();
             _unanchoredWorldSliceSubscriptions = new List<WorldSliceSpecifier>();
             _anchoredWorldSliceSubscriptions = new List<WorldSliceSpecifier>();
-
-
-            _playerStateGetter = playerStateGetter;
-            _npcStateGetter = npcStateGetter;
-            _unanchoredWorldSliceGetter = unanchoredWorldSliceGetter;
-            _anchoredWorldSliceGetter = anchoredWorldSliceGetter;
+            _worldInterface = new WorldInterface();
         }
+
+
+        #region State
+
         public List<StateObject> GetState()
         {
             var result = new List<StateObject>();
-            if (_playerStateSubscribed) result.Add(_playerStateGetter());
-            foreach (string npcKey in _npcStateSubscriptions)
+            try
             {
-                result.Add(_npcStateGetter(npcKey));
+                if (_worldInterface.IsWorldLoaded())
+                {
+                    if (_playerStateSubscribed) result.Add(_worldInterface.GetPlayerState());
+
+                    foreach (NpcSubscription npc in _npcStateSubscriptions)
+                    {
+                        List<NpcState> npcState = _worldInterface.GetNpcState(npc.npcName, npc.nearestN);
+                        if(npcState.Count > 0)
+                        {
+                            result = result.Union(npcState).ToList();
+                        }
+                    }
+                    
+                    foreach (WorldSliceSpecifier slice in _unanchoredWorldSliceSubscriptions)
+                    {
+                        result.Add(_worldInterface.GetUnanchoredWorldSlice(slice));
+                    }
+                    foreach (WorldSliceSpecifier slice in _anchoredWorldSliceSubscriptions)
+                    {
+                        result.Add(_worldInterface.GetAnchoredWorldSlice(slice));
+                    }
+                }
             }
-            foreach (WorldSliceSpecifier slice in _unanchoredWorldSliceSubscriptions)
+            catch (Exception e)
             {
-                result.Add(_unanchoredWorldSliceGetter(slice));
+                result.Add(new ErrorState(e.Message + "|" + e.StackTrace + "|" + e.Source));
             }
-            foreach (WorldSliceSpecifier slice in _anchoredWorldSliceSubscriptions)
-            {
-                result.Add(_anchoredWorldSliceGetter(slice));
-            }
+
+
+
+
             return result;
         }
+
+        #region State Subscriptions
 
         public bool SubscribeToPlayerState()
         {
@@ -130,13 +154,23 @@ namespace PythonBridge
             _playerStateSubscribed = true;
             return true;
         }
-        public bool SubscribeToNpcState(string npcName)
+        public bool SubscribeToNpcState(string npcName, int nearestN)
         {
-            if (_npcStateSubscriptions.Exists(x => x == npcName))
+            var matchingNames = _npcStateSubscriptions.Where(x => x.npcName == npcName).ToList();
+            if (matchingNames.Count > 0)
             {
-                return false;
+                if(matchingNames[0].nearestN == nearestN)
+                {
+                    return false;
+                }
+                else
+                {
+                    matchingNames[0].nearestN = nearestN;
+                    return true;
+                }
+                
             }
-            _npcStateSubscriptions.Add(npcName);
+            _npcStateSubscriptions.Add(new NpcSubscription(npcName, nearestN));
             return true;
         }
         public bool SubscribeToUnanchoredWorldSlice(int x, int y, int width, int height)
@@ -149,8 +183,7 @@ namespace PythonBridge
             _unanchoredWorldSliceSubscriptions.Add(newSlice);
             return true;
         }
-
-        public bool SubscribeToPlayerAnchoredWorldSlice(int xOffset, int yOffset, int width, int height)
+        public bool SubscribeToAnchoredWorldSlice(int xOffset, int yOffset, int width, int height)
         {
             WorldSliceSpecifier newSlice = new WorldSliceSpecifier(xOffset, yOffset, width, height);
             if (_anchoredWorldSliceSubscriptions.Exists(z => z.Equals(newSlice)))
@@ -160,27 +193,30 @@ namespace PythonBridge
             _anchoredWorldSliceSubscriptions.Add(newSlice);
             return true;
         }
+
+        #endregion
+
+        #region State Unsubscriptions
+
         public void UnsubscribeFromPlayerState()
         {
             _playerStateSubscribed = false;
         }
         public void UnsubscribeFromNpcState(string npcName)
         {
-            _npcStateSubscriptions.RemoveAll(x => x == npcName);
+            _npcStateSubscriptions.RemoveAll(x => x.npcName == npcName);
         }
         public void UnsubscribeFromUnanchoredWorldSlice(int x, int y, int width, int height)
         {
             WorldSliceSpecifier newSlice = new WorldSliceSpecifier(x, y, width, height);
             _unanchoredWorldSliceSubscriptions.RemoveAll(z => z.Equals(newSlice));
         }
-
         public void UnsubscribeFromAnchoredWorldSlice(int xOffset, int yOffset, int width, int height)
         {
 
             WorldSliceSpecifier newSlice = new WorldSliceSpecifier(xOffset, yOffset, width, height);
             _anchoredWorldSliceSubscriptions.RemoveAll(z => z.Equals(newSlice));
         }
-
         public void UnsubscribeFromAll()
         {
             _playerStateSubscribed = false;
@@ -189,10 +225,27 @@ namespace PythonBridge
             _anchoredWorldSliceSubscriptions.Clear();
         }
 
-        public void LoadWorld(string worldName)
-        {
+        #endregion
 
+        #endregion
+
+        #region Loading
+
+        public bool EnterWorld(string worldName, string playerName)
+        {
+            return _worldInterface.EnterWorld(worldName, playerName);
         }
+
+        public bool ExitWorld()
+        {
+            return _worldInterface.ExitWorld();
+        }
+
+
+
+        #endregion
+
+        #region Configuration
 
         public void ConfigureWorld(string worldConfiguration)
         {
@@ -203,18 +256,17 @@ namespace PythonBridge
         {
 
         }
+
+        #endregion
     }
 
     public class UpdateServer
     {
         private WebServiceHost _host;
 
-        public UpdateServer(Func<PlayerState> playerStateGetter,
-            Func<string, NpcState> npcStateGetter,
-            Func<WorldSliceSpecifier, WorldSlice> unanchoredWorldSliceGetter,
-            Func<WorldSliceSpecifier, WorldSlice> anchoredWorldSliceGetter)
+        public UpdateServer()
         {
-            var instance = new UpdateService(playerStateGetter, npcStateGetter, unanchoredWorldSliceGetter, anchoredWorldSliceGetter);
+            var instance = new UpdateService();
             _host = new WebServiceHost(instance, new Uri("http://localhost:8001"));
             _host.AddServiceEndpoint(typeof(IUpdateService), new WebHttpBinding(), "");
         }

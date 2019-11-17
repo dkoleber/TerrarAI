@@ -2,7 +2,11 @@ using Terraria.ModLoader;
 
 namespace PythonBridge
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Terraria;
+    using Terraria.ModLoader;
     public class PythonBridge : Mod
 	{
         
@@ -10,8 +14,7 @@ namespace PythonBridge
         private UpdateServer _server;
         public PythonBridge()
 		{
-            _server = new UpdateServer(GetPlayerState, GetNpcState, GetUnanchoredWorldSlice, GetAnchoredWorldSlice);
-            
+            _server = new UpdateServer();
         }
 
         public override void Load()
@@ -25,21 +28,6 @@ namespace PythonBridge
             _server.Close();
         }
 
-        private PlayerState GetPlayerState()
-        {
-            return new PlayerState(Main.player[Terraria.Main.myPlayer]);
-        }
-        private NpcState GetNpcState(string npcName)
-        {
-            return new NpcState(); // $"(npc state: {npcName})";
-        }
-        private WorldSlice GetUnanchoredWorldSlice(WorldSliceSpecifier slice)
-        {
-            return new WorldSlice(); // $"(unanchored world slice: {slice.x}+{slice.width},{slice.y}+{slice.height})";
-        }
-        private WorldSlice GetAnchoredWorldSlice(WorldSliceSpecifier slice)
-        {
-            return new WorldSlice(); // $"(anchored world slice: {slice.x}+{slice.width},{slice.y}+{slice.height})";
-        }
+        
     }
 }

@@ -13,18 +13,16 @@ namespace PythonBridge
 
     [DataContract]
     [KnownType(typeof(PlayerState))]
+    [KnownType(typeof(NpcState))]
     [KnownType(typeof(WorldSlice))]
+    [KnownType(typeof(ErrorState))]
     public class StateObject
-    {
-
-    }
+    {}
 
 
     [DataContract]
     public class BuffState
-    {
-  
-    }
+    {}
     [DataContract]
     public class InventoryItem
     {
@@ -72,11 +70,24 @@ namespace PythonBridge
             x = player.position.X;
             y = player.position.Y;
             inventoryState = new InventoryState(player.inventory, player.selectedItem);
+            life = player.statLife;
+            maxLife = player.statLifeMax;
+            mana = player.statMana;
+            maxMana = player.statManaMax;
         }
         [DataMember]
         public float x;
         [DataMember]
         public float y;
+        [DataMember]
+        public int life;
+        [DataMember]
+        public int maxLife;
+        [DataMember]
+        public int mana;
+        [DataMember]
+        public int maxMana;
+
         [DataMember]
         public InventoryState inventoryState;
         [DataMember]
@@ -86,9 +97,35 @@ namespace PythonBridge
     [DataContract]
     public class NpcState : StateObject
     {
+        [DataMember]
+        public string name;
+        [DataMember]
+        public float x;
+        [DataMember]
+        public float y;
+        [DataMember]
+        public int life;
+        [DataMember]
+        public int maxLife;
 
+        public NpcState(NPC npc)
+        {
+            name = npc.FullName;
+            life = npc.life;
+            maxLife = npc.lifeMax;
+            x = npc.position.X;
+            y = npc.position.Y;
+        }
+        public NpcState(string name)
+        {
+            this.name = name;
+            life = 0;
+            maxLife = 0;
+            x = 0;
+            y = 0;
+        }
+        public NpcState() : this("null") { }
     }
-
 
     [DataContract]
     public class WorldSliceSpecifier
@@ -118,13 +155,46 @@ namespace PythonBridge
     }
 
     [DataContract]
-    public class WorldSlice: StateObject
-    {   
+    public class WorldSlice : StateObject
+    {
         [DataMember]
         public WorldSliceSpecifier slice;
+        [DataMember]
+        public int[][] data;
+        public WorldSlice(Tile[,] tiles, int x, int y, int width, int height) : this(tiles, new WorldSliceSpecifier(x, y, width, height)) { }
+
+        public WorldSlice(Tile[,] tiles, WorldSliceSpecifier specifier)
+        {
+            this.slice = specifier;
+            this.data = new int[specifier.width][];
+            for (int i = 0; i < specifier.width; i++)
+            {
+                this.data[i] = new int[specifier.height];
+                for (int j = 0; j < specifier.height; j++)
+                {
+                    var refTile = tiles[specifier.x + i, specifier.y + j];
+                    this.data[i][j] = refTile.active() ? refTile.type : -1;
+                }
+            }
+        }
+        public WorldSlice(WorldSliceSpecifier specifier)
+        {
+            this.slice = specifier;
+            this.data = new int[0][];
+        }
     }
 
+    [DataContract]
+    public class ErrorState: StateObject
+    {
+        [DataMember]
+        public string message;
 
+        public ErrorState(string message)
+        {
+            this.message = message;
+        }
+    }
     
 
 }
