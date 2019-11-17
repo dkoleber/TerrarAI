@@ -1,7 +1,7 @@
 import math
-
-import numpy as np
 from abc import ABC, abstractmethod
+
+from State import InventoryState, InventoryItem, PlayerState, NpcState, WorldSlice
 
 '''
 A NOTE ON MASKING
@@ -27,11 +27,6 @@ For non-array types that need to be masked, this is better represented as
 '''
 
 
-
-
-def euclidian_distance(x1, y1, x2, y2):
-    return math.sqrt((x1-x2)^2 + (y1-y2)^2)
-
 def apply_operator_as_character(value_1, value_2, operator_character):
     if operator_character == '>':
         return value_1 > value_2
@@ -47,111 +42,9 @@ def apply_operator_as_character(value_1, value_2, operator_character):
         return value_1 != value_2
     return False
 
-def remove_duplicates(s):
-    res = ''
-    for i in range(len(s)):
-        if i == 0 or s[i-1] != s[i]:
-            res += s[i]
-    return res
+def euclidian_distance(x1, y1, x2, y2):
+    return math.sqrt((x1-x2)^2 + (y1-y2)^2)
 
-def remove_vowels(s):
-    res = s.replace('a','')
-    res = res.replace('e','')
-    res = res.replace('i','')
-    res = res.replace('o','')
-    res = res.replace('u','')
-    res = res.replace(' ','')
-    return res
-
-def shorten_string(s):
-    return remove_duplicates(remove_vowels(s))
-
-class BuffState:
-    def __init__(self, rep):
-        pass
-    def __str__(self):
-        return '[]'
-    def __repr__(self):
-        return self.__str__()
-
-class InventoryItem:
-    def __init__(self, rep):
-        self.name = rep['name']
-        self.quantity = rep['quantity']
-        self.slot_number = rep['slotNumber']
-        self.selected = rep['selected']
-    def __str__(self):
-        result = shorten_string((str(self.name))) + ' x' + str(self.quantity) + ' (' + str(self.slot_number)
-        if self.selected:
-            result += '-' + str(self.selected)
-        result += ')'
-        return result
-    def __repr__(self):
-        return self.__str__()
-
-class InventoryState:
-    def __init__(self, rep, item_type=InventoryItem):
-        self.items = []
-        for item in rep['items']:
-            self.items.append(item_type(item))
-    def __str__(self):
-        result = '['
-        for item in self.items:
-            result += '<' + str(item) + '>, '
-        result += ']'
-        return result
-    def __repr__(self):
-        return self.__str__()
-
-class PlayerState:
-    def __init__(self, rep, inventory_type=InventoryState):
-        self.buff_state = BuffState(rep['buffState'])
-        self.x = rep['x']
-        self.y = rep['y']
-        self.life = rep['life']
-        self.max_life = rep['maxLife']
-        self.mana = rep['mana']
-        self.max_mana = rep['maxMana']
-        self.inventory_state = inventory_type(rep['inventoryState'])
-    def __str__(self):
-        return  '<PlayerState (' + str(self.x) + ', ' + str(self.y) \
-                + ') H=(' + str(self.life) + '/' + str(self.max_life) \
-                + ') M=(' + str(self.mana) + '/' + str(self.max_mana) \
-                + ')>'
-                # + ') Inventory=' + str(self.inventory_state) + ' Buffs=' + str(self.buff_state)
-    def __repr__(self):
-        return self.__str__()
-
-class NpcState:
-    def __init__(self, rep):
-        self.name = rep['name']
-        self.x = rep['x']
-        self.y = rep['y']
-        self.life = rep['life']
-        self.max_life = rep['maxLife']
-    def __str__(self):
-        return  f'<NpcState \'{self.name}\' ({self.x}, {self.y}) H=({self.life}/{self.max_life})>'
-    def __repr__(self):
-        return self.__str__()
-
-class WorldSlice:
-    def __init__(self, rep):
-        self.x = rep['slice']['x']
-        self.y = rep['slice']['y']
-        self.width = rep['slice']['width']
-        self.height = rep['slice']['height']
-        self.grid = np.array(rep['data'])
-
-    def __str__(self):
-        result = f'<WorldSlice ({self.x}+{self.width}, {self.y}+{self.height})'
-        # result += f' [{self.grid.flatten()}]'
-        result += '>'
-        return result
-    def __repr__(self):
-        return self.__str__()
-
-class WorldState:
-    pass
 
 class StateTarget(ABC):
     @abstractmethod
@@ -168,6 +61,7 @@ class InventoryItemTarget(InventoryItem, StateTarget):
     # def get_reward(self, actual_state: InventoryItem):
     #     if apply_operator_as_character(actual_state.quantity, self.quantity, self.function):
     #         return
+
 
 class InventoryStateTarget(InventoryState, StateTarget):
     def __init__(self, rep):
@@ -250,5 +144,19 @@ class WorldSliceTarget(WorldSlice, StateTarget):
         else:
             return 1
 
-class WorldStateTarget(WorldState, StateTarget):
-    pass
+
+
+
+class Scenario:
+    def __init__(self, rep):
+        self.world_name = rep['world_name']
+        self.player_name = rep['player_name']
+        self.world_configuration = rep['world_configuration']
+        self.success_state = rep['success_state']
+        self.failure_state = rep['failure_state']
+
+class ScenarioTrainingSpecification:
+    def __init__(self, scenario: Scenario, rounds, weight=1):
+        self.scenario = scenario
+        self.rounds = rounds
+        self.weight = weight

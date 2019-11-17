@@ -1,17 +1,124 @@
-import http.client
-import urllib.request
+import json
+import math
 import threading
 import time
-import json
-from typing import List
+import urllib.request
 
-from DataTypes import PlayerState, NpcState, WorldSlice
+import numpy as np
+from abc import ABC, abstractmethod
 
-UPDATE_PERIOD = 1 #in seconds
+def remove_duplicates(s):
+    res = ''
+    for i in range(len(s)):
+        if i == 0 or s[i-1] != s[i]:
+            res += s[i]
+    return res
 
-class Listener(threading.Thread):
+def remove_vowels(s):
+    res = s.replace('a','')
+    res = res.replace('e','')
+    res = res.replace('i','')
+    res = res.replace('o','')
+    res = res.replace('u','')
+    res = res.replace(' ','')
+    return res
 
-    def __init__(self, min_update_period=UPDATE_PERIOD,):
+def shorten_string(s):
+    return remove_duplicates(remove_vowels(s))
+
+class BuffState:
+    def __init__(self, rep):
+        pass
+    def __str__(self):
+        return '[]'
+    def __repr__(self):
+        return self.__str__()
+
+class InventoryItem:
+    def __init__(self, rep):
+        self.name = rep['name']
+        self.quantity = rep['quantity']
+        self.slot_number = rep['slotNumber']
+        self.selected = rep['selected']
+    def __str__(self):
+        result = shorten_string((str(self.name))) + ' x' + str(self.quantity) + ' (' + str(self.slot_number)
+        if self.selected:
+            result += '-' + str(self.selected)
+        result += ')'
+        return result
+    def __repr__(self):
+        return self.__str__()
+
+class InventoryState:
+    def __init__(self, rep, item_type=InventoryItem):
+        self.items = []
+        for item in rep['items']:
+            self.items.append(item_type(item))
+    def __str__(self):
+        result = '['
+        for item in self.items:
+            result += '<' + str(item) + '>, '
+        result += ']'
+        return result
+    def __repr__(self):
+        return self.__str__()
+
+class PlayerState:
+    def __init__(self, rep, inventory_type=InventoryState):
+        self.buff_state = BuffState(rep['buffState'])
+        self.x = rep['x']
+        self.y = rep['y']
+        self.life = rep['life']
+        self.max_life = rep['maxLife']
+        self.mana = rep['mana']
+        self.max_mana = rep['maxMana']
+        self.inventory_state = inventory_type(rep['inventoryState'])
+    def __str__(self):
+        return  '<PlayerState (' + str(self.x) + ', ' + str(self.y) \
+                + ') H=(' + str(self.life) + '/' + str(self.max_life) \
+                + ') M=(' + str(self.mana) + '/' + str(self.max_mana) \
+                + ')>'
+                # + ') Inventory=' + str(self.inventory_state) + ' Buffs=' + str(self.buff_state)
+    def __repr__(self):
+        return self.__str__()
+
+class NpcState:
+    def __init__(self, rep):
+        self.name = rep['name']
+        self.x = rep['x']
+        self.y = rep['y']
+        self.life = rep['life']
+        self.max_life = rep['maxLife']
+    def __str__(self):
+        return  f'<NpcState \'{self.name}\' ({self.x}, {self.y}) H=({self.life}/{self.max_life})>'
+    def __repr__(self):
+        return self.__str__()
+
+class WorldSlice:
+    def __init__(self, rep):
+        self.x = rep['slice']['x']
+        self.y = rep['slice']['y']
+        self.width = rep['slice']['width']
+        self.height = rep['slice']['height']
+        self.grid = np.array(rep['data'])
+
+    def __str__(self):
+        result = f'<WorldSlice ({self.x}+{self.width}, {self.y}+{self.height})'
+        # result += f' [{self.grid.flatten()}]'
+        result += '>'
+        return result
+    def __repr__(self):
+        return self.__str__()
+
+class Timestate:
+    def __init__(self, rep):
+        self.ticks = rep['worldTicks']
+
+
+
+class StateListener(threading.Thread):
+
+    def __init__(self, min_update_period,):
         super().__init__()
 
         self.minimum_update_period = min_update_period
@@ -155,68 +262,3 @@ class Listener(threading.Thread):
         except:
             print(f'failed to connect to {url}')
 
-
-class SpawnConfiguration:
-    def __init__(self, npc_name:str, spawn_rate, initial_number):
-        self.npc_name = npc_name
-        self.spawn_rate = spawn_rate
-        self.initial_number = initial_number
-
-class WorldConfiguration:
-    def __init__(self, player_configuration:PlayerState, npc_configurations:List[NpcState], spawn_configurations:List[SpawnConfiguration]):
-        self.player_configuration = player_configuration #PlayerState
-        self.npc_configurations = npc_configurations #List[NpcState]
-        self.spawn_configurations = spawn_configurations #List[SpawnConfiguration]
-
-class WorldConfigurer:
-    def load_world(self, world_name, player_name):
-        url = f'http://localhost:8001/EnterWorld?worldName={world_name}&playerName={player_name}'
-        try:
-            with urllib.request.urlopen(url) as response:
-                if response.status == 200:
-                    print(f'entered world {world_name} as {player_name}: {response.read()}')
-                else:
-                    print(f'failed to enter world {world_name} as {player_name}')
-        except Exception as e:
-            print(f'failed to connect to {url}')
-            print(e)
-
-    def exit_world(self):
-        url = f'http://localhost:8001/ExitWorld'
-        try:
-            with urllib.request.urlopen(url) as response:
-                if response.status == 200:
-                    print(f'exited world: {response.read()}')
-                else:
-                    print(f'failed to exit world')
-        except:
-            print(f'failed to connect to {url}')
-
-    def configure_world(self, world_configuration:WorldConfiguration):
-        pass #TODO
-
-if __name__=='__main__':
-    try:
-        listener = Listener(UPDATE_PERIOD)
-        world_configurer = WorldConfigurer()
-
-        listener.unsubscribe_from_all()
-        listener.subscribe_to_player_state()
-        listener.subscribe_to_npc_state('Green Slime', 2)
-        listener.subscribe_to_npc_state('Zombie', 2)
-        listener.subscribe_to_unanchored_world_slice(-1, 0, 2, 2)
-        listener.start()
-        time.sleep(1)
-
-        world_configurer.load_world('TESTWORLD1', 'TEST2')
-
-        time.sleep(5)
-
-        world_configurer.exit_world()
-
-        world_configurer.load_world('TESTWORLD2', 'TEST1')
-        time.sleep(5)
-        world_configurer.exit_world()
-
-    except:
-        time.sleep(10)

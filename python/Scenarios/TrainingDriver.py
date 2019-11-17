@@ -1,31 +1,20 @@
 import time
 from typing import List
 
-from Agent import SequentialAgent, AgentFactory
-from GameInterface import Listener, WorldConfigurer
+from Agent import AgentFactory
+from Test.Sandbox import StateListener, WorldConfigurer
 from Action import ActionManager
 from Action import global_io_adapter
+from Scenarios.Scenarios import ScenarioTrainingSpecification
 
 TRAINING_ROUNDS = 1000
 
-class Scenario:
-    def __init__(self, rep):
-        self.world_name = rep['world_name']
-        self.player_name = rep['player_name']
-        self.world_configuration = rep['world_configuration']
-        self.success_state = rep['success_state']
-        self.failure_state = rep['failure_state']
 
-class ScenarioTrainingSpecification:
-    def __init__(self, scenario: Scenario, rounds=TRAINING_ROUNDS, weight=1):
-        self.scenario = scenario
-        self.rounds = rounds
-        self.weight = weight
 
 class TrainingDriver:
     def __init__(self, agent_factory:AgentFactory):
         self.manager = ActionManager()
-        self.listener = Listener()
+        self.listener = StateListener()
         self.world_configurer = WorldConfigurer()
 
         self.agent_factory = agent_factory
@@ -57,17 +46,17 @@ class TrainingDriver:
 
 def run():
     time.sleep(5)
-    manager = ActionManager()
-    listener = Listener()
-    action_space = manager.get_action_space_definition()
-    agent = SequentialAgent(action_space)
-
-    while (True):
-        agent_input = global_io_adapter.get_screen()
-        agent_output = agent.get_action(agent_input)
-        manager.execute_actions(agent_output)
-        game_state = listener.get_state()
-        # reinforce agent with resulting game state
+    # manager = ActionManager()
+    # listener = Listener()
+    # action_space = manager.get_action_space_definition()
+    # agent = SequentialAgent(action_space)
+    #
+    # while (True):
+    #     agent_input = global_io_adapter.get_screen()
+    #     agent_output = agent.get_action(agent_input)
+    #     manager.execute_actions(agent_output)
+    #     game_state = listener.get_state()
+    #     # reinforce agent with resulting game state
 
 
 if __name__=='__main__':

@@ -1,12 +1,8 @@
 from enum import Enum
-from queue import Queue
 from typing import List
-import threading
 from abc import ABC, abstractmethod
 
-import pyautogui as pg
-import time
-from IOAdapter import IOAdapter
+from Backend.IOAdapter import IOAdapter
 
 
 global_io_adapter = IOAdapter()
@@ -74,19 +70,28 @@ class MouseAction(IOAction):
     def start(self):
         if self.key == 'mouse_move' and self.x is not None and self.y is not None:
             global_io_adapter.mouse_move_relative(self.x, self.y)
-        else:
+        elif self.key == 'mouse_left':
             if not self.is_held:
-                global_io_adapter.click()
+                global_io_adapter.left_click()
             else:
-                global_io_adapter.mouse_down()
+                global_io_adapter.left_mouse_down()
+        elif self.key == 'mouse_right':
+            if not self.is_held:
+                global_io_adapter.right_click()
+            else:
+                global_io_adapter.right_mouse_down()
 
     def end(self):
-        if self.key == 'mouse_click' and self.is_held:
-            global_io_adapter.mouse_up()
+        if self.key == 'mouse_left' and self.is_held:
+            global_io_adapter.left_mouse_up()
+        elif self.key == 'mouse_right' and self.is_held:
+            global_io_adapter.left_mouse_up()
 
     def extend(self):
-        if self.key == 'mouse_click' and not self.is_held:
-            global_io_adapter.click()
+        if self.key == 'mouse_left' and not self.is_held:
+            global_io_adapter.left_click()
+        elif self.key == 'mouse_right' and not self.is_held:
+            global_io_adapter.right_click()
 
 
 class IOActions:
@@ -163,7 +168,7 @@ class ActionManager:
                     self.previous_actions = new_actions
 
     def get_action_space_definition(self) -> ActionSpace:
-        action_names = ['mouse_click']
+        action_names = ['mouse_left', 'mouse_right']
         action_names.extend(self.adapter.get_available_keys())
         result = [
             ActionDefinition('mouse_x', ActionType.REAL),
@@ -174,12 +179,12 @@ class ActionManager:
 
     def io_actions_from_action_vector(self, action_vector: List[float]) -> IOActions:
         actions = [MouseAction(False, 'mouse_move', action_vector[0], action_vector[1])]
-        for i in range(2,3):
+        for i in range(2,4):
             if action_vector[i] > .66:
                 actions.append(MouseAction(True, self.space_definition.definition[i].name))
             elif action_vector[i] > .33:
                 actions.append(MouseAction(False, self.space_definition.definition[i].name))
-        for i in range(3, len(action_vector)):
+        for i in range(4, len(action_vector)):
             if action_vector[i] > .66:
                 actions.append(KeyAction(True, self.space_definition.definition[i].name))
             elif action_vector[i] > .33:
@@ -188,10 +193,3 @@ class ActionManager:
         return IOActions(actions)
 
 
-class HardCodedAction:
-    def __init__(self, key, amount, delay, x=None, y=None):
-        self.key = key
-        self.amount = amount
-        self.delay = delay
-        self.x = x
-        self.y = y

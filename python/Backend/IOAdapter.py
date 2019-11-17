@@ -149,13 +149,22 @@ class IOAdapter:
         else:
             pg.moveTo(x + self.center_x, y + self.center_y, duration)
 
-    def mouse_down(self):
+    def left_mouse_down(self):
         pg.mouseDown()
 
-    def mouse_up(self):
+    def left_mouse_up(self):
         pg.mouseUp()
 
-    def click(self):
+    def left_click(self):
+        pg.click()
+
+    def right_mouse_down(self):
+        pg.mouseDown()
+
+    def right_mouse_up(self):
+        pg.mouseUp()
+
+    def right_click(self):
         pg.click()
 
     def get_screen(self):

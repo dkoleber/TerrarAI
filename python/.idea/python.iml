@@ -5,6 +5,10 @@
       <sourceFolder url="file://$MODULE_DIR$/pythonbridge" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/pythonbridge/pythonbridge" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/pythonbridge/bridge/migrations" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Test" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Scenarios" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Backend" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Agents" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.6" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
