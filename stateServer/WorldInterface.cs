@@ -77,48 +77,76 @@ namespace PythonBridge
             return new WorldSlice(Main.tile, slice);
         }
 
+        public TimeState GetTimeState()
+        {
+            return new TimeState(Main.GameUpdateCount);
+        }
+
         #endregion
 
 
         #region World Configuration
 
-        public bool EnterWorld(string worldName, string playerName)
+        public string EnterWorld(string worldName, string playerName)
         {
             //check if it's in the default folder
             //if not, move it there
             // and reload worlds
 
-            WorldGen.clearWorld();
-            Main.LoadWorlds();
-            Main.LoadPlayers();
-            WorldGen.EveryTileFrame();
-
-
-            var worldFileData = Main.WorldList.Where(x => x.Name.Contains(worldName));
-            var player = Main.PlayerList.Where(x => x.Player.name.Contains(playerName));
-            if (worldFileData.Count() > 0 && player.Count() > 0)
+            string preValue = "";
+            try
             {
-                Main.ActiveWorldFileData = worldFileData.First();
-                player.First().SetAsActive();
-                Main.ActivePlayerFileData.StartPlayTimer();
-                Player.Hooks.EnterWorld(Main.myPlayer);
-                Main.player[Main.myPlayer].Spawn();
+                WorldGen.clearWorld();
+                Main.LoadPlayers();
+                Main.LoadWorlds();
 
-                //WorldGen.playWorld();
-                WorldGen.playWorldCallBack(null);
-                //Main.gameMenu = false;
-                //Main.menuMode = 10;
 
-                return true;
+                var worldFileData = Main.WorldList.Where(x => x.Name.Contains(worldName));
+                var player = Main.PlayerList.Where(x => x.Player.name.Contains(playerName));
+                if (worldFileData.Count() > 0 && player.Count() > 0)
+                {
+                    
+                    player.First().SetAsActive();
+                    
+                    Main.ActiveWorldFileData = worldFileData.First();
+                    WorldGen.EveryTileFrame();
+
+                    //Player p = Main.player[Main.myPlayer];
+                    //preValue = "" + Main.myPlayer;
+                    //try
+                    //{
+                    //    p.Spawn();
+                    //}
+                    //catch
+                    //{
+                    //    return "oh no";
+                    //}
+                    
+                    //Main.ActivePlayerFileData.StartPlayTimer();
+                    //Player.Hooks.EnterWorld(Main.myPlayer);
+
+                    //WorldGen.playWorld();
+                    WorldGen.playWorldCallBack(null);
+                    //Main.gameMenu = false;
+                    //Main.menuMode = 10;
+
+                    return "succeeded";
+                }
+                else
+                {
+                    return "no matching worlds or players";
+                }
             }
-            else
+            catch(Exception e)
             {
-                return false;
+                return $"{e} - {Main.myPlayer} - {Main.player.Length} - {preValue}";
             }
+            
         }
 
         public bool ExitWorld()
         {
+
             WorldGen.SaveAndQuitCallBack(null);
             return true;
         }

@@ -1,7 +1,8 @@
 import time
 
-from GameBridge import ActionManager, SequentialAgent
-from GameBridge import global_io_adapter
+from Agent import SequentialAgent
+from Action import ActionManager
+from Action import global_io_adapter
 
 class GameDriver:
     pass

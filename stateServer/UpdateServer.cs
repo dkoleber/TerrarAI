@@ -56,7 +56,7 @@ namespace PythonBridge
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        bool EnterWorld(string worldName, string playerName);
+        string EnterWorld(string worldName, string playerName);
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -114,6 +114,8 @@ namespace PythonBridge
             {
                 if (_worldInterface.IsWorldLoaded())
                 {
+                    result.Add(_worldInterface.GetTimeState());
+
                     if (_playerStateSubscribed) result.Add(_worldInterface.GetPlayerState());
 
                     foreach (NpcSubscription npc in _npcStateSubscriptions)
@@ -231,7 +233,7 @@ namespace PythonBridge
 
         #region Loading
 
-        public bool EnterWorld(string worldName, string playerName)
+        public string EnterWorld(string worldName, string playerName)
         {
             return _worldInterface.EnterWorld(worldName, playerName);
         }

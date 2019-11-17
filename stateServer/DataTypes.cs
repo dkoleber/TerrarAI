@@ -16,6 +16,7 @@ namespace PythonBridge
     [KnownType(typeof(NpcState))]
     [KnownType(typeof(WorldSlice))]
     [KnownType(typeof(ErrorState))]
+    [KnownType(typeof(TimeState))]
     public class StateObject
     {}
 
@@ -195,6 +196,17 @@ namespace PythonBridge
             this.message = message;
         }
     }
-    
+
+    [DataContract]
+    public class TimeState: StateObject
+    {
+        [DataMember]
+        public uint worldTicks;
+
+        public TimeState(uint ticks)
+        {
+            worldTicks = ticks;
+        }
+    }
 
 }

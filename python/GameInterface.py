@@ -3,6 +3,7 @@ import urllib.request
 import threading
 import time
 import json
+from typing import List
 
 from DataTypes import PlayerState, NpcState, WorldSlice
 
@@ -20,7 +21,8 @@ class Listener(threading.Thread):
         while(self.is_running):
             start_time = time.time()
             state = self.get_state()
-            print(str(state))
+            if len(state) > 0:
+                print(str(state))
 
             end_time = time.time()
             elapsed = end_time - start_time
@@ -153,6 +155,19 @@ class Listener(threading.Thread):
         except:
             print(f'failed to connect to {url}')
 
+
+class SpawnConfiguration:
+    def __init__(self, npc_name:str, spawn_rate, initial_number):
+        self.npc_name = npc_name
+        self.spawn_rate = spawn_rate
+        self.initial_number = initial_number
+
+class WorldConfiguration:
+    def __init__(self, player_configuration:PlayerState, npc_configurations:List[NpcState], spawn_configurations:List[SpawnConfiguration]):
+        self.player_configuration = player_configuration #PlayerState
+        self.npc_configurations = npc_configurations #List[NpcState]
+        self.spawn_configurations = spawn_configurations #List[SpawnConfiguration]
+
 class WorldConfigurer:
     def load_world(self, world_name, player_name):
         url = f'http://localhost:8001/EnterWorld?worldName={world_name}&playerName={player_name}'
@@ -162,8 +177,9 @@ class WorldConfigurer:
                     print(f'entered world {world_name} as {player_name}: {response.read()}')
                 else:
                     print(f'failed to enter world {world_name} as {player_name}')
-        except:
+        except Exception as e:
             print(f'failed to connect to {url}')
+            print(e)
 
     def exit_world(self):
         url = f'http://localhost:8001/ExitWorld'
@@ -175,6 +191,9 @@ class WorldConfigurer:
                     print(f'failed to exit world')
         except:
             print(f'failed to connect to {url}')
+
+    def configure_world(self, world_configuration:WorldConfiguration):
+        pass #TODO
 
 if __name__=='__main__':
     try:
@@ -194,7 +213,7 @@ if __name__=='__main__':
         time.sleep(5)
 
         world_configurer.exit_world()
-        
+
         world_configurer.load_world('TESTWORLD2', 'TEST1')
         time.sleep(5)
         world_configurer.exit_world()
