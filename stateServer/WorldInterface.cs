@@ -151,6 +151,58 @@ namespace PythonBridge
             return true;
         }
 
+        public WorldConfiguration GetDummyWorldConfiguration()
+        {
+            var npc = new NpcConfiguration();
+            npc.npcName = "Green Slime";
+            npc.removeExistingInstances = true;
+            npc.spawnRate = 30;
+            var coord = new Coordinate(50, 20);
+            npc.initialLocations.Add(coord);
+            var result = new WorldConfiguration();
+            result.npcConfigurations.Add(npc);
+
+            return result;
+        }
+        public PlayerState GetDummyPlayerConfiguration()
+        {
+            var invItem = new InventoryItem("test_item", 1, 10, false);
+            var inv = new InventoryState();
+            inv.items.Add(invItem);
+            var player = new PlayerState();
+            player.inventoryState = inv;
+            return player;
+        }
+
+        public string ConfigureWorld(WorldConfiguration worldConfiguration)
+        {
+            if(worldConfiguration.npcConfigurations != null)
+            {
+                foreach(NpcConfiguration npcConfig in worldConfiguration.npcConfigurations)
+                {
+                    var npcs = Main.npc.Where(x => x.FullName.Contains(npcConfig.npcName));
+                    if(npcs.Count() > 0)
+                    {
+                        var npc = npcs.First();
+                        
+                    }
+                }
+            }
+
+            return "success";
+        }
+        public string ConfigurePlayer(PlayerState playerConfiguration)
+        {
+            var player = Main.player[Main.myPlayer];
+            if (playerConfiguration.life != -1) player.statLife = playerConfiguration.life;
+            if (playerConfiguration.maxLife != -1) player.statLifeMax = playerConfiguration.maxLife;
+            if (playerConfiguration.mana != -1) player.statMana = playerConfiguration.mana;
+            if (playerConfiguration.maxMana != -1) player.statManaMax = playerConfiguration.maxMana;
+
+            return "success";
+        }
+
+
 
         private void InitWorld()
         {

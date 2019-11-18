@@ -12,9 +12,13 @@ namespace PythonBridge
     [ServiceContract]
     public interface IUpdateService
     {
+        #region State
+
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
         List<StateObject> GetState();
+
+        #region Subscriptions
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -52,7 +56,11 @@ namespace PythonBridge
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
         void UnsubscribeFromAll();
 
+        #endregion
 
+        #endregion
+
+        #region Configuration
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -63,14 +71,18 @@ namespace PythonBridge
         bool ExitWorld();
 
         [OperationContract]
-        [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        void ConfigureWorld(string worldConfiguration); //includes npc locations
+        [WebInvoke(Method = "POST", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        string ConfigureWorld(WorldConfiguration worldConfiguration);
+
+        [OperationContract]
+        [WebInvoke(Method = "POST", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        string ConfigurePlayer(PlayerState playerConfiguration);
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        void ConfigurePlayer(string playerConfiguration); //includes inventory, health, buffs, and location
+        WorldConfiguration GetDummyConfiguration();
 
-
+        #endregion
     }
 
     public class NpcSubscription
@@ -243,20 +255,23 @@ namespace PythonBridge
             return _worldInterface.ExitWorld();
         }
 
-
-
         #endregion
 
         #region Configuration
 
-        public void ConfigureWorld(string worldConfiguration)
+        public string ConfigureWorld(WorldConfiguration worldConfiguration)
         {
-
+            return _worldInterface.ConfigureWorld(worldConfiguration);
         }
 
-        public void ConfigurePlayer(string playerConfiguration)
+        public string ConfigurePlayer(PlayerState playerConfiguration)
         {
+            return _worldInterface.ConfigurePlayer(playerConfiguration);
+        }
 
+        public WorldConfiguration GetDummyConfiguration()
+        {
+            return _worldInterface.GetDummyWorldConfiguration();
         }
 
         #endregion

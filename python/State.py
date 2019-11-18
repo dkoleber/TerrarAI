@@ -1,11 +1,15 @@
 import json
 import math
+import os
+import sys
 import threading
 import time
 import urllib.request
 
 import numpy as np
 from abc import ABC, abstractmethod
+
+from SharedDataTypes import Serializable
 
 def remove_duplicates(s):
     res = ''
@@ -34,7 +38,7 @@ class BuffState:
     def __repr__(self):
         return self.__str__()
 
-class InventoryItem:
+class InventoryItem(Serializable):
     def __init__(self, rep):
         self.name = rep['name']
         self.quantity = rep['quantity']
@@ -48,8 +52,15 @@ class InventoryItem:
         return result
     def __repr__(self):
         return self.__str__()
+    def to_dict(self):
+        result = {}
+        result['name'] = self.name
+        result['quantity'] = self.quantity
+        result['slotNumber'] = self.slot_number
+        result['selected'] = self.selected
+        return result
 
-class InventoryState:
+class InventoryState(Serializable):
     def __init__(self, rep, item_type=InventoryItem):
         self.items = []
         for item in rep['items']:
@@ -62,17 +73,20 @@ class InventoryState:
         return result
     def __repr__(self):
         return self.__str__()
+    def to_dict(self):
+        return {'items':[item.to_dict() for item in self.items]}
 
-class PlayerState:
-    def __init__(self, rep, inventory_type=InventoryState):
-        self.buff_state = BuffState(rep['buffState'])
-        self.x = rep['x']
-        self.y = rep['y']
-        self.life = rep['life']
-        self.max_life = rep['maxLife']
-        self.mana = rep['mana']
-        self.max_mana = rep['maxMana']
-        self.inventory_state = inventory_type(rep['inventoryState'])
+class PlayerState(Serializable):
+    def __init__(self, rep:dict, inventory_type=InventoryState):
+        keys = rep.keys()
+        self.buff_state = BuffState(rep['buffState']) if 'buffState' in keys else None
+        self.x = rep['x'] if 'x' in keys else -1
+        self.y = rep['y'] if 'y' in keys else -1
+        self.life = rep['life'] if 'life' in keys else -1
+        self.max_life = rep['maxLife'] if 'maxLife' in keys else -1
+        self.mana = rep['mana'] if 'mana' in keys else -1
+        self.max_mana = rep['maxMana'] if 'maxMana' in keys else -1
+        self.inventory_state = inventory_type(rep['inventoryState']) if 'inventoryState' in keys else None
     def __str__(self):
         return  '<PlayerState (' + str(self.x) + ', ' + str(self.y) \
                 + ') H=(' + str(self.life) + '/' + str(self.max_life) \
@@ -81,6 +95,17 @@ class PlayerState:
                 # + ') Inventory=' + str(self.inventory_state) + ' Buffs=' + str(self.buff_state)
     def __repr__(self):
         return self.__str__()
+    def to_dict(self):
+        result = {}
+        result['buffState'] = None
+        result['inventoryState'] = self.inventory_state.to_dict() if self.inventory_state is not None else None
+        result['life'] = self.life
+        result['maxLife'] = self.max_life
+        result['mana'] = self.mana
+        result['maxMana'] = self.max_mana
+        result['x'] = self.x
+        result['y'] = self.y
+        return result
 
 class NpcState:
     def __init__(self, rep):
@@ -113,8 +138,6 @@ class WorldSlice:
 class Timestate:
     def __init__(self, rep):
         self.ticks = rep['worldTicks']
-
-
 
 class StateListener(threading.Thread):
 

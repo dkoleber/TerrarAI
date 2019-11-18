@@ -9,8 +9,6 @@ namespace PythonBridge
 {
     using Terraria;
 
-
-
     [DataContract]
     [KnownType(typeof(PlayerState))]
     [KnownType(typeof(NpcState))]
@@ -19,7 +17,6 @@ namespace PythonBridge
     [KnownType(typeof(TimeState))]
     public class StateObject
     {}
-
 
     [DataContract]
     public class BuffState
@@ -32,6 +29,13 @@ namespace PythonBridge
             slotNumber = slot;
             name = item.Name;
             quantity = item.stack;
+            this.selected = selected;
+        }
+        public InventoryItem(string name, int slot, int quantity, bool selected)
+        {
+            this.name = name;
+            this.quantity = quantity;
+            this.slotNumber = slot;
             this.selected = selected;
         }
         [DataMember]
@@ -49,9 +53,8 @@ namespace PythonBridge
     {
         [DataMember]
         public List<InventoryItem> items;
-        public InventoryState(Item[] items, int selectedIndex)
+        public InventoryState(Item[] items, int selectedIndex) : this()
         {
-            this.items = new List<InventoryItem>();
             for(int i = 0; i < items.Length; i++)
             {
                 Item item = items[i];
@@ -60,6 +63,10 @@ namespace PythonBridge
                     this.items.Add(new InventoryItem(i, item, i == selectedIndex));
                 }
             }
+        }
+        public InventoryState()
+        {
+            this.items = new List<InventoryItem>();
         }
     }
 
@@ -76,6 +83,17 @@ namespace PythonBridge
             mana = player.statMana;
             maxMana = player.statManaMax;
         }
+        public PlayerState(int x, int y, int life, int maxLife, int mana, int maxMana, InventoryState invState)
+        {
+            this.x = x;
+            this.y = y;
+            this.life = life;
+            this.maxLife = maxLife;
+            this.mana = mana;
+            this.maxMana = maxMana;
+            this.inventoryState = invState;
+        }
+        public PlayerState() : this(-1, -1, -1, -1, -1, -1, null) { }
         [DataMember]
         public float x;
         [DataMember]
