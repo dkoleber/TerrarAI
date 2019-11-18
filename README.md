@@ -9,7 +9,7 @@ These implicit objectives are easy to specify due to the mechanical simplicity o
 which makes the game a great environment for a reinforcement learning agent.
 
 TerrarAI provides many key capabilities that a reinforcement learning environment requires. 
-Among them, the TerraAI provides:
+Among them, the TerrarAI provides:
 * the reporting of internal game state (defined the player state, world state, and non-player character state)
 * the configuration of the internal game state
 * the automation of entering and exiting the game environment
@@ -19,7 +19,7 @@ These capabilities support key reinforcement learning functionality by providing
 * initialize game state and interact with agents during training, via dynamically or statically generated game state configurations
 * fully automate the training process without the necessity to write scripts to interact with the game's UI
 
-### For documentation, access the [wiki](https://github.com/dkoleber/TerrarAI/wiki).
+### [Everything else you need to know is on the wiki.](https://github.com/dkoleber/TerrarAI/wiki).
 
 ## License
 
