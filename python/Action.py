@@ -192,4 +192,7 @@ class ActionManager:
 
         return IOActions(actions)
 
+    def get_screen(self):
+        return global_io_adapter.get_screen()
+
 

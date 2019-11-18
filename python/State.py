@@ -139,9 +139,16 @@ class Timestate:
     def __init__(self, rep):
         self.ticks = rep['worldTicks']
 
+class GameState:
+    def __init__(self):
+        self.player_state = None
+        self.time_state = None
+        self.npc_states = []
+        self.slices = []
+
 class StateListener(threading.Thread):
 
-    def __init__(self, min_update_period,):
+    def __init__(self, min_update_period=1):
         super().__init__()
 
         self.minimum_update_period = min_update_period
@@ -159,8 +166,8 @@ class StateListener(threading.Thread):
             duration = max(self.minimum_update_period - elapsed, 0)
             time.sleep(duration)
 
-    def get_state(self):
-        states = []
+    def get_state(self) -> GameState:
+        game_state = GameState()
         url = f'http://localhost:8001/GetState'
         try:
             with urllib.request.urlopen(url) as response:
@@ -170,18 +177,18 @@ class StateListener(threading.Thread):
                         state_objects = json.loads(data.decode('utf8'))
                         for state in state_objects:
                             if 'PlayerState' in state['__type']:
-                               states.append(PlayerState(state))
+                                game_state.player_state = PlayerState(state)
                             elif 'NpcState' in state['__type']:
-                                states.append(NpcState(state))
+                                game_state.npc_states.append(NpcState(state))
                             elif 'WorldSlice' in state['__type']:
-                                states.append(WorldSlice(state))
+                                game_state.slices.append(WorldSlice(state))
                             # else:
                             #     print(f'unknown state: {state}')
                     except Exception as e:
                         print(f'exception: {e}')
         except Exception as ex:
             print(ex)
-        return states
+        return game_state
 
     def stop(self):
         self.is_running = False

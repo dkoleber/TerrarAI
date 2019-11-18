@@ -19,7 +19,7 @@ These capabilities support key reinforcement learning functionality by providing
 * initialize game state and interact with agents during training, via dynamically or statically generated game state configurations
 * fully automate the training process without the necessity to write scripts to interact with the game's UI
 
-For more information, access the documentation.
+### For documentation, access the [wiki](https://github.com/dkoleber/TerrarAI/wiki).
 
 ## License
 

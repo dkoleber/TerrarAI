@@ -1,1 +1,1 @@
-PythonBridge is a pretty cool mod, it does...this. Modify this file with a description of your mod.
+TerrarAI provides an interface into the Terraria engine via a WCF service

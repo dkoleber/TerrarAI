@@ -26,13 +26,13 @@ def test_world_loading():
     listener.start()
     time.sleep(1)
 
-    world_configurer.load_world('TESTWORLD1', 'TEST2')
+    world_configurer.enter_world('TESTWORLD1', 'TEST2')
 
     time.sleep(5)
 
     world_configurer.exit_world()
 
-    world_configurer.load_world('TESTWORLD2', 'TEST1')
+    world_configurer.enter_world('TESTWORLD2', 'TEST1')
     time.sleep(5)
     world_configurer.exit_world()
     time.sleep(2)
@@ -64,7 +64,7 @@ def test_world_configuration():
 
 
     world_configurer = WorldConfigurer()
-    world_configurer.load_world('TESTWORLD1', 'TEST2')
+    world_configurer.enter_world('TESTWORLD1', 'TEST2')
     # world_configurer.get_dummy_configuration()
     world_configurer.configure_world(world_config)
 

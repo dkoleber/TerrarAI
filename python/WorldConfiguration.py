@@ -46,7 +46,7 @@ class WorldConfiguration(Serializable):
         return str(self)
 
 class WorldConfigurer:
-    def load_world(self, world_name, player_name):
+    def enter_world(self, world_name, player_name):
         url = f'http://localhost:8001/EnterWorld?worldName={world_name}&playerName={player_name}'
         try:
             with urllib.request.urlopen(url) as response:

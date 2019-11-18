@@ -2,6 +2,7 @@ import time
 from typing import List
 
 from Agent import AgentFactory
+from State import PlayerState
 from Test.Sandbox import StateListener, WorldConfigurer
 from Action import ActionManager
 from Action import global_io_adapter
@@ -21,12 +22,11 @@ class TrainingDriver:
         self.agent = self.agent_factory.get_agent(self.manager.get_action_space_definition())
 
     def train(self, scenarios:List[ScenarioTrainingSpecification]):
-        shuffled_scenarios = scenarios #TODO
-        for scenario in shuffled_scenarios:
-            self.world_configurer.load_world(scenario.scenario.world_name, scenario.scenario.player_name)
+        for scenario in scenarios:
+            self.world_configurer.enter_world(scenario.scenario.world_name, scenario.scenario.player_name)
             self.world_configurer.configure_world(scenario.scenario.world_configuration)
             while True:
-                agent_input = global_io_adapter.get_screen()
+                agent_input = self.manager.get_screen()
                 agent_output = self.agent.get_action(agent_input)
                 self.manager.execute_actions(agent_output)
                 game_state = self.listener.get_state()
@@ -40,6 +40,48 @@ class TrainingDriver:
                     break
             self.world_configurer.exit_world()
 
+class TrainingDriver2:
+    def __init__(self, agent_factory:AgentFactory):
+        self.manager = ActionManager()
+        self.listener = StateListener()
+        self.world_configurer = WorldConfigurer()
+        self.agent = agent_factory.get_agent(self.manager.get_action_space_definition())
+        self.num_training_steps = 1000
+        self.num_training_epochs = 1000
+        self.target_world = 'Test_world_1'
+        self.target_player = 'Test_player_1'
+
+    def train_epoch(self):
+        player_config_dict = {
+            'life': 100,
+            'maxLife':200
+        }
+        player_config_init = PlayerState(player_config_dict)
+
+        for step in range(self.num_training_steps):
+            self.world_configurer.enter_world(self.target_world, self.target_player)
+            self.world_configurer.configure_player(player_config_init)
+
+            game_state_init = self.listener.get_state()
+            game_state = self.listener.get_state()
+            while True: # Training loop
+                agent_input = self.manager.get_screen()
+                agent_output = self.agent.get_action(agent_input)
+                self.manager.execute_actions(agent_output)
+                game_state = self.listener.get_state()
+                if (game_state.time_state.ticks - game_state_init.time_state.ticks) > 1000: # Training step termination condition
+                    break
+            self.world_configurer.exit_world()
+
+            success = game_state.player_state.life > 100
+            reward = 1 if success else -1
+            self.agent.apply_reward(reward)
+
+    def train(self):
+        self.listener.unsubscribe_from_all()
+        self.listener.subscribe_to_player_state()
+        for epoch in range(self.num_training_epochs):
+            self.train_epoch()
 
 
 
