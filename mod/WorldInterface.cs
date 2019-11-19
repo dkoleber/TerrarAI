@@ -18,16 +18,16 @@ namespace PythonBridge
             return new PlayerState(Main.player[Terraria.Main.myPlayer]);
         }
 
-        public List<NpcState> GetNpcState(string npcName, int nearestN)
+        public NpcTypeState GetNpcState(string npcName, int nearestN)
         {
-            var states = new List<NpcState>();
+            var state = new NpcTypeState(npcName);
             var closest = new List<float>();
             var matchingNpcs = Main.npc.ToList().Where(x => x.FullName.Contains(npcName) && x.life > 0).ToList();
             if (matchingNpcs.Count > nearestN)
             {
                 foreach (NPC npc in matchingNpcs)
                 {
-                    states.Add(new NpcState(npc));
+                    state.npcStates.Add(new NpcState(npc));
                 }
             }
             else
@@ -40,24 +40,24 @@ namespace PythonBridge
                         if (distance < closest[i])
                         {
                             closest.Insert(i, distance);
-                            states.Insert(i, new NpcState(npc));
+                            state.npcStates.Insert(i, new NpcState(npc));
                             if (closest.Count > nearestN)
                             {
                                 closest.RemoveAt(nearestN);
-                                states.RemoveAt(nearestN);
+                                state.npcStates.RemoveAt(nearestN);
                             }
                             break;
                         }
                     }
                     if (closest.Count < nearestN)
                     {
-                        states.Add(new NpcState(npc));
+                        state.npcStates.Add(new NpcState(npc));
                         closest.Add(distance);
                     }
                 }
             }
 
-            return states;
+            return state;
         }
 
         public bool IsWorldLoaded()
@@ -84,16 +84,10 @@ namespace PythonBridge
 
         #endregion
 
-
         #region World Configuration
 
-        public string EnterWorld(string worldName, string playerName)
+        public bool EnterWorld(string worldName, string playerName)
         {
-            //check if it's in the default folder
-            //if not, move it there
-            // and reload worlds
-
-            string preValue = "";
             try
             {
                 WorldGen.clearWorld();
@@ -130,18 +124,17 @@ namespace PythonBridge
                     //Main.gameMenu = false;
                     //Main.menuMode = 10;
 
-                    return "succeeded";
+                    return true;
                 }
                 else
                 {
-                    return "no matching worlds or players";
+                    return false;
                 }
             }
-            catch(Exception e)
+            catch
             {
-                return $"{e} - {Main.myPlayer} - {Main.player.Length} - {preValue}";
+                return false;
             }
-            
         }
 
         public bool ExitWorld()

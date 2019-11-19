@@ -109,15 +109,26 @@ class PlayerState(Serializable):
 
 class NpcState:
     def __init__(self, rep):
-        self.name = rep['name']
+
         self.x = rep['x']
         self.y = rep['y']
         self.life = rep['life']
         self.max_life = rep['maxLife']
     def __str__(self):
-        return  f'<NpcState \'{self.name}\' ({self.x}, {self.y}) H=({self.life}/{self.max_life})>'
+        return  f'<NpcState ({self.x}, {self.y}) H=({self.life}/{self.max_life})>'
     def __repr__(self):
         return self.__str__()
+
+class NpcTypeState:
+    def __init__(self, rep):
+        self.name = rep['npcName']
+        self.npc_states = []
+        for npc in rep['npcStates']:
+            self.npc_states.append(NpcState(npc))
+    def __str__(self):
+        return f'<NpcTypeState \'{self.name}\' {self.npc_states}>'
+    def __repr__(self):
+        return str(self)
 
 class WorldSlice:
     def __init__(self, rep):
@@ -135,16 +146,38 @@ class WorldSlice:
     def __repr__(self):
         return self.__str__()
 
-class Timestate:
+class TimeState:
     def __init__(self, rep):
         self.ticks = rep['worldTicks']
+    def __str__(self):
+        return str(self.ticks)
+    def __repr__(self):
+        return str(self)
 
 class GameState:
-    def __init__(self):
-        self.player_state = None
-        self.time_state = None
-        self.npc_states = []
-        self.slices = []
+    def __init__(self, rep):
+        self.time_state = TimeState(rep['timeState']) if rep['timeState'] is not None else None
+        self.player_state = PlayerState(rep['playerState']) if rep['playerState'] is not None else None
+        self.npc_states = [NpcTypeState(x) for x in rep['npcStates']]
+        self.unanchored_slices = [WorldSlice(x) for x in rep['unanchoredWorldSlices']]
+        self.anchored_slices = [WorldSlice(x) for x in rep['anchoredWorldSlices']]
+        self.error_message = rep['errorMessage']
+    def __str__(self):
+        result = f'<WS'
+        if self.time_state is not None:
+            result += f' T:{self.time_state}'
+        if self.player_state is not None:
+            result += f' P:{self.player_state}'
+        if len(self.npc_states) > 0:
+            result += f' N:{[x for x in self.npc_states if len(x.npc_states) > 0]}'
+        if len(self.unanchored_slices) > 0:
+            result += f' UA:{self.unanchored_slices}'
+        if len(self.anchored_slices) > 0:
+            result += f' A:{self.anchored_slices}'
+        result += '>'
+        return result
+    def __repr__(self):
+        return str(self)
 
 class StateListener(threading.Thread):
 
@@ -158,8 +191,7 @@ class StateListener(threading.Thread):
         while(self.is_running):
             start_time = time.time()
             state = self.get_state()
-            if len(state) > 0:
-                print(str(state))
+            print(state)
 
             end_time = time.time()
             elapsed = end_time - start_time
@@ -167,25 +199,17 @@ class StateListener(threading.Thread):
             time.sleep(duration)
 
     def get_state(self) -> GameState:
-        game_state = GameState()
+        game_state = None
         url = f'http://localhost:8001/GetState'
         try:
             with urllib.request.urlopen(url) as response:
                 if response.status == 200:
                     data = response.read()
                     try:
-                        state_objects = json.loads(data.decode('utf8'))
-                        for state in state_objects:
-                            if 'PlayerState' in state['__type']:
-                                game_state.player_state = PlayerState(state)
-                            elif 'NpcState' in state['__type']:
-                                game_state.npc_states.append(NpcState(state))
-                            elif 'WorldSlice' in state['__type']:
-                                game_state.slices.append(WorldSlice(state))
-                            # else:
-                            #     print(f'unknown state: {state}')
+                        state_object = json.loads(data.decode('utf8'))
+                        game_state = GameState(state_object)
                     except Exception as e:
-                        print(f'exception: {e}')
+                        print(e)
         except Exception as ex:
             print(ex)
         return game_state

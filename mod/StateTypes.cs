@@ -9,14 +9,6 @@ namespace PythonBridge
 {
     using Terraria;
 
-    [DataContract]
-    [KnownType(typeof(PlayerState))]
-    [KnownType(typeof(NpcState))]
-    [KnownType(typeof(WorldSlice))]
-    [KnownType(typeof(ErrorState))]
-    [KnownType(typeof(TimeState))]
-    public class StateObject
-    {}
 
     [DataContract]
     public class BuffState
@@ -71,7 +63,7 @@ namespace PythonBridge
     }
 
     [DataContract]
-    public class PlayerState : StateObject
+    public class PlayerState
     {
         public PlayerState(Player player)
         {
@@ -114,10 +106,9 @@ namespace PythonBridge
     }
 
     [DataContract]
-    public class NpcState : StateObject
+    public class NpcState
     {
-        [DataMember]
-        public string name;
+        
         [DataMember]
         public float x;
         [DataMember]
@@ -129,21 +120,35 @@ namespace PythonBridge
 
         public NpcState(NPC npc)
         {
-            name = npc.FullName;
             life = npc.life;
             maxLife = npc.lifeMax;
             x = npc.position.X;
             y = npc.position.Y;
         }
-        public NpcState(string name)
+        public NpcState()
         {
-            this.name = name;
             life = 0;
             maxLife = 0;
             x = 0;
             y = 0;
         }
-        public NpcState() : this("null") { }
+    }
+
+    [DataContract]
+    public class NpcTypeState
+    {
+        [DataMember]
+        public string npcName;
+        [DataMember]
+        public List<NpcState> npcStates;
+        public NpcTypeState(string npcName) : this()
+        {
+            this.npcName = npcName;
+        }
+        public NpcTypeState()
+        {
+            this.npcStates = new List<NpcState>();
+        }
     }
 
     [DataContract]
@@ -174,7 +179,7 @@ namespace PythonBridge
     }
 
     [DataContract]
-    public class WorldSlice : StateObject
+    public class WorldSlice
     {
         [DataMember]
         public WorldSliceSpecifier slice;
@@ -204,19 +209,7 @@ namespace PythonBridge
     }
 
     [DataContract]
-    public class ErrorState: StateObject
-    {
-        [DataMember]
-        public string message;
-
-        public ErrorState(string message)
-        {
-            this.message = message;
-        }
-    }
-
-    [DataContract]
-    public class TimeState: StateObject
+    public class TimeState
     {
         [DataMember]
         public uint worldTicks;
@@ -224,6 +217,29 @@ namespace PythonBridge
         public TimeState(uint ticks)
         {
             worldTicks = ticks;
+        }
+    }
+
+    [DataContract]
+    public class GameState
+    {
+        [DataMember]
+        public TimeState timeState;
+        [DataMember]
+        public PlayerState playerState;
+        [DataMember]
+        public List<NpcTypeState> npcStates;
+        [DataMember]
+        public List<WorldSlice> unanchoredWorldSlices;
+        [DataMember]
+        public List<WorldSlice> anchoredWorldSlices;
+        [DataMember]
+        public string errorMessage;
+        public GameState()
+        {
+            this.npcStates = new List<NpcTypeState>();
+            this.unanchoredWorldSlices = new List<WorldSlice>();
+            this.anchoredWorldSlices = new List<WorldSlice>();
         }
     }
 

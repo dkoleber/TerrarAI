@@ -23,21 +23,20 @@ def test_world_loading():
     listener.subscribe_to_npc_state('Green Slime', 2)
     listener.subscribe_to_npc_state('Zombie', 2)
     listener.subscribe_to_unanchored_world_slice(-1, 0, 2, 2)
-    listener.start()
+
     time.sleep(1)
 
-    world_configurer.enter_world('TESTWORLD1', 'TEST2')
+    if world_configurer.enter_world('TESTWORLD1', 'TEST2'):
+        for i in range(5):
+            print(listener.get_state())
+            time.sleep(1)
 
-    time.sleep(5)
-
-    world_configurer.exit_world()
-
-    world_configurer.enter_world('TESTWORLD2', 'TEST1')
-    time.sleep(5)
-    world_configurer.exit_world()
-    time.sleep(2)
-    listener.stop()
-
+        if world_configurer.exit_world():
+            if world_configurer.enter_world('TESTWORLD2', 'TEST1'):
+                for i in range(5):
+                    print(listener.get_state())
+                    time.sleep(1)
+                world_configurer.exit_world()
 
 def get_test_world_configuration():
     config_dict = {
@@ -76,4 +75,5 @@ def test_world_configuration():
 
 
 if __name__=='__main__':
-    test_world_configuration()
+    # test_world_configuration()
+    test_world_loading()

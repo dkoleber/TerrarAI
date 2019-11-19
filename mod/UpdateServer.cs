@@ -12,11 +12,12 @@ namespace PythonBridge
     [ServiceContract]
     public interface IUpdateService
     {
+               
         #region State
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        List<StateObject> GetState();
+        GameState GetState();
 
         #region Subscriptions
 
@@ -64,7 +65,7 @@ namespace PythonBridge
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
-        string EnterWorld(string worldName, string playerName);
+        bool EnterWorld(string worldName, string playerName);
 
         [OperationContract]
         [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
@@ -119,43 +120,36 @@ namespace PythonBridge
 
         #region State
 
-        public List<StateObject> GetState()
+        public GameState GetState()
         {
-            var result = new List<StateObject>();
+            var result = new GameState();
             try
             {
                 if (_worldInterface.IsWorldLoaded())
                 {
-                    result.Add(_worldInterface.GetTimeState());
+                    result.timeState = _worldInterface.GetTimeState();
 
-                    if (_playerStateSubscribed) result.Add(_worldInterface.GetPlayerState());
+                    if (_playerStateSubscribed) result.playerState  = _worldInterface.GetPlayerState();
 
                     foreach (NpcSubscription npc in _npcStateSubscriptions)
                     {
-                        List<NpcState> npcState = _worldInterface.GetNpcState(npc.npcName, npc.nearestN);
-                        if(npcState.Count > 0)
-                        {
-                            result = result.Union(npcState).ToList();
-                        }
+                        result.npcStates.Add(_worldInterface.GetNpcState(npc.npcName, npc.nearestN));
                     }
                     
                     foreach (WorldSliceSpecifier slice in _unanchoredWorldSliceSubscriptions)
                     {
-                        result.Add(_worldInterface.GetUnanchoredWorldSlice(slice));
+                        result.unanchoredWorldSlices.Add(_worldInterface.GetUnanchoredWorldSlice(slice));
                     }
                     foreach (WorldSliceSpecifier slice in _anchoredWorldSliceSubscriptions)
                     {
-                        result.Add(_worldInterface.GetAnchoredWorldSlice(slice));
+                        result.anchoredWorldSlices.Add(_worldInterface.GetAnchoredWorldSlice(slice));
                     }
                 }
             }
             catch (Exception e)
             {
-                result.Add(new ErrorState(e.Message + "|" + e.StackTrace + "|" + e.Source));
+                result.errorMessage =  e.Message + "|" + e.StackTrace + "|" + e.Source;
             }
-
-
-
 
             return result;
         }
@@ -245,7 +239,7 @@ namespace PythonBridge
 
         #region Loading
 
-        public string EnterWorld(string worldName, string playerName)
+        public bool EnterWorld(string worldName, string playerName)
         {
             return _worldInterface.EnterWorld(worldName, playerName);
         }
