@@ -157,7 +157,6 @@ class WorldConfigurer:
 
         return enter_success
 
-
     def exit_world(self) -> bool:
         if self.current_player_name is None or self.current_world_name is None:
             return False
@@ -195,7 +194,6 @@ class WorldConfigurer:
             print(f'failed to exit world {self.current_world_name} as {self.current_player_name}')
 
         return exit_success
-
 
     def configure_world(self, world_configuration:WorldConfiguration):
         url = f'{self.url}/ConfigureWorld'

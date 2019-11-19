@@ -1,13 +1,16 @@
 import http.client
 import os
 import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
 import urllib.request
 import threading
 import time
 import json
 from typing import List
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../'))
+from Action import ActionManager
+
+
 
 from State import PlayerState, NpcState, WorldSlice, StateListener
 from WorldConfiguration import WorldConfigurer, WorldConfiguration
@@ -73,7 +76,11 @@ def test_world_configuration():
     world_configurer.exit_world()
 
 
+def test_screenshot():
+    manager = ActionManager()
+    print(manager.get_screen().shape)
 
-if __name__=='__main__':
+if __name__=='__main__': 
     # test_world_configuration()
-    test_world_loading()
+    # test_world_loading()
+    test_screenshot()

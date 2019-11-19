@@ -168,4 +168,4 @@ class IOAdapter:
         pg.click()
 
     def get_screen(self):
-        return np.array(self.capture_device.shot())
+        return np.array(self.capture_device.grab(self.monitor_dim))
