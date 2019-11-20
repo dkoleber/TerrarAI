@@ -80,7 +80,7 @@ def test_screenshot():
     manager = ActionManager()
     print(manager.get_screen().shape)
 
-if __name__=='__main__': 
+if __name__=='__main__':
     # test_world_configuration()
     # test_world_loading()
     test_screenshot()

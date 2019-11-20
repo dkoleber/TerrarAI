@@ -10,6 +10,12 @@ namespace PythonBridge
 {
     public class WorldInterface
     {
+        public void SetWindowTitle(string title)
+        {
+            ReLogic.OS.Platform.Current.SetWindowUnicodeTitle(Main.instance.Window, title);
+        }
+
+
 
         #region State
 

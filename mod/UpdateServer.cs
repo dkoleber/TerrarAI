@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.ServiceModel.Web;
@@ -12,7 +13,10 @@ namespace PythonBridge
     [ServiceContract]
     public interface IUpdateService
     {
-               
+        [OperationContract]
+        [WebInvoke(Method = "GET", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json)]
+        string GetPort();       
+
         #region State
 
         [OperationContract]
@@ -106,17 +110,24 @@ namespace PythonBridge
         private List<WorldSliceSpecifier> _unanchoredWorldSliceSubscriptions;
         private List<WorldSliceSpecifier> _anchoredWorldSliceSubscriptions;
         private WorldInterface _worldInterface;
+        private string _port;
 
 
-        public UpdateService()
+        public UpdateService(string port)
         {
+            _port = port;
             _playerStateSubscribed = false;
             _npcStateSubscriptions = new List<NpcSubscription>();
             _unanchoredWorldSliceSubscriptions = new List<WorldSliceSpecifier>();
             _anchoredWorldSliceSubscriptions = new List<WorldSliceSpecifier>();
             _worldInterface = new WorldInterface();
+            _worldInterface.SetWindowTitle($"TerrarAI: {_port}");
         }
 
+        public string GetPort()
+        {
+            return _port;
+        }
 
         #region State
 
@@ -273,12 +284,14 @@ namespace PythonBridge
 
     public class UpdateServer
     {
+        private static int _basePort = 8001;
         private WebServiceHost _host;
 
         public UpdateServer()
         {
-            var instance = new UpdateService();
-            _host = new WebServiceHost(instance, new Uri("http://localhost:8001"));
+            var chosenPort = this.GetNextPort();
+            var instance = new UpdateService(chosenPort);
+            _host = new WebServiceHost(instance, new Uri("http://localhost:" + chosenPort));
             _host.AddServiceEndpoint(typeof(IUpdateService), new WebHttpBinding(), "");
         }
         public void Run()
@@ -288,6 +301,37 @@ namespace PythonBridge
         public void Close()
         {
             _host.Close();
+        }
+
+        private string GetNextPort()
+        {
+            var client = new HttpClient();
+            var baseAddress = "http://localhost:";
+            var baseEndpont = "/GetPort";
+            var currentPort = _basePort;
+            var foundUnusedAddress = false;
+            do
+            {
+                try
+                {
+                    var otherPortTask = client.GetStringAsync(baseAddress + currentPort + baseEndpont);
+                    otherPortTask.Wait();
+                    if (otherPortTask.IsFaulted)
+                    {
+                        foundUnusedAddress = true;
+                    }
+                    else
+                    {
+                        currentPort++;
+                    }
+                }
+                catch
+                {
+                    foundUnusedAddress = true;
+                }
+            } while (!foundUnusedAddress);
+
+            return currentPort + "";
         }
 
 
