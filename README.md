@@ -19,6 +19,8 @@ These capabilities support key reinforcement learning functionality by providing
 * initialize game state and interact with agents during training, via dynamically or statically generated game state configurations
 * fully automate the training process without the necessity to write scripts to interact with the game's UI
 
+### Before diving too deep, you might want to read [Why Terraria Isn't the Best RL Environment](https://github.com/dkoleber/TerrarAI/wiki/Why-Terraria-isn't-the-best-RL-environment)
+
 ### [Everything else you need to know is on the wiki](https://github.com/dkoleber/TerrarAI/wiki)
 
 ## License
